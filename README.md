@@ -122,3 +122,16 @@ Execute ```gradlew nativeBuild``` task. After success, binary file will be in `\
 #### Linux
 
 Rename `buildLinux.sh.example` into `buildLinux.sh` and fill required fields. Head into project dir and execute it. After success, binary file will be in `/build/gluonfx/x86_64-linux` folder
+
+### GitHub Actions release build
+
+Release binaries for `Windows x64` and `Linux x64` are built by the `Release binaries` workflow.
+
+Push a version tag to create a GitHub Release with native binary assets:
+
+```bash
+git tag v1.1
+git push origin v1.1
+```
+
+The same workflow can also be started manually from the GitHub Actions tab. Manual runs upload workflow artifacts, while tag runs additionally attach the binaries to the GitHub Release.

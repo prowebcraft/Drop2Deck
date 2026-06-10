@@ -4,11 +4,16 @@ import xyz.drop2deck.enums.Platform;
 import org.graalvm.nativeimage.ImageInfo;
 import org.graalvm.nativeimage.ImageSingletons;
 
+import java.nio.file.Path;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Comparator;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 public class PlatformUtils {
     private static final String LINUX_BOARD_VENDOR_PATH = "/sys/devices/virtual/dmi/id/board_vendor";
+    private static final String STEAM_DECK_RUN_MEDIA_PATH = "/run/media";
     private static final String VALVE_VENDOR = "valve";
     private static final String STEAM_DECK_CODENAME = "jupiter";
 
@@ -53,5 +58,27 @@ public class PlatformUtils {
     public static boolean isUnix(String osName) {
         String os = osName.toLowerCase();
         return os.contains("nix") || os.contains("nux");
+    }
+
+    public static Optional<String> findSteamDeckExternalPath() {
+        Path runMediaPath = Paths.get(STEAM_DECK_RUN_MEDIA_PATH);
+        if (!Files.isDirectory(runMediaPath)) {
+            return Optional.empty();
+        }
+
+        try (Stream<Path> paths = Files.find(
+                runMediaPath,
+                2,
+                (path, attrs) -> attrs.isDirectory() && !path.equals(runMediaPath) && Files.isReadable(path)
+        )) {
+            return paths
+                    .sorted(Comparator
+                            .comparingInt((Path path) -> -runMediaPath.relativize(path).getNameCount())
+                            .thenComparing(Path::toString))
+                    .map(Path::toString)
+                    .findFirst();
+        } catch (Exception e) {
+            return Optional.empty();
+        }
     }
 }

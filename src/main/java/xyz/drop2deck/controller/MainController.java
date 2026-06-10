@@ -7,6 +7,7 @@ import xyz.drop2deck.network.StorLoggingFtplet;
 import xyz.drop2deck.skin.VisiblePasswordFieldSkin;
 import xyz.drop2deck.util.FXUtils;
 import xyz.drop2deck.util.NetworkUtils;
+import xyz.drop2deck.util.PlatformUtils;
 import xyz.drop2deck.util.QRCodeUtils;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXDialog;
@@ -49,6 +50,8 @@ public class MainController {
     private static final String PREF_PASSWORD = "password";
     private static final String PREF_PORT_INTERNAL = "port_internal";
     private static final String PREF_PORT_EXTERNAL = "port_external";
+    private static final String PREF_PATH_INTERNAL = "path_internal";
+    private static final String PREF_PATH_EXTERNAL = "path_external";
 
     private static final String FTP_URL_TEMPLATE = "ftp://%s:%s@%s:%s";
 
@@ -78,6 +81,10 @@ public class MainController {
     private TextField tfPortInternal;
     @FXML
     private TextField tfPortExternal;
+    @FXML
+    private TextField tfPathInternal;
+    @FXML
+    private TextField tfPathExternal;
 
     // Start/Stop server button
     @FXML
@@ -145,12 +152,12 @@ public class MainController {
 
         setPasswordFieldSkin();
         bindVisibility();
-        bindTextFieldsInputChange();
         roundQRCorners();
         createOnServerStateChangeListener();
         fixButtonHeightOnWindows();
 
         loadDataFromPreferences();
+        bindTextFieldsInputChange();
     }
 
     private void loadDataFromPreferences() {
@@ -158,6 +165,8 @@ public class MainController {
         tfPassword.setText(PREFERENCES.get(PREF_PASSWORD, DEFAULT_PASSWORD));
         tfPortInternal.setText(String.valueOf(PREFERENCES.getInt(PREF_PORT_INTERNAL, DEFAULT_PORT_INTERNAL)));
         tfPortExternal.setText(String.valueOf(PREFERENCES.getInt(PREF_PORT_EXTERNAL, DEFAULT_PORT_EXTERNAL)));
+        tfPathInternal.setText(resolvePreferencePath(PREF_PATH_INTERNAL, FXApplication.CURRENT_PLATFORM.getInternalPath()));
+        tfPathExternal.setText(resolvePreferencePath(PREF_PATH_EXTERNAL, getDefaultExternalPath()));
     }
 
     private void setPasswordFieldSkin() {
@@ -175,8 +184,10 @@ public class MainController {
     private void bindTextFieldsInputChange() {
         tfUsername.textProperty().addListener((observable, oldValue, newValue) -> PREFERENCES.put(PREF_USERNAME, newValue));
         tfPassword.textProperty().addListener((observable, oldValue, newValue) -> PREFERENCES.put(PREF_PASSWORD, newValue));
-        tfPortInternal.textProperty().addListener((observable, oldValue, newValue) -> PREFERENCES.putInt(PREF_PORT_INTERNAL, Integer.parseInt(newValue)));
-        tfPortExternal.textProperty().addListener((observable, oldValue, newValue) -> PREFERENCES.putInt(PREF_PORT_EXTERNAL, Integer.parseInt(newValue)));
+        tfPortInternal.textProperty().addListener((observable, oldValue, newValue) -> putIntPreference(PREF_PORT_INTERNAL, newValue));
+        tfPortExternal.textProperty().addListener((observable, oldValue, newValue) -> putIntPreference(PREF_PORT_EXTERNAL, newValue));
+        tfPathInternal.textProperty().addListener((observable, oldValue, newValue) -> PREFERENCES.put(PREF_PATH_INTERNAL, newValue));
+        tfPathExternal.textProperty().addListener((observable, oldValue, newValue) -> PREFERENCES.put(PREF_PATH_EXTERNAL, newValue));
     }
 
     private void roundQRCorners() {
@@ -232,12 +243,12 @@ public class MainController {
             if (ftpServerInternal == null && ftpServerExternal == null) {
                 ftpServerInternal = createServer(
                         lblInternalLogs,
-                        FXApplication.CURRENT_PLATFORM.getInternalPath(),
+                        resolveServerPath(tfPathInternal.getText(), FXApplication.CURRENT_PLATFORM.getInternalPath()),
                         tfPortInternal.getText()
                 );
                 ftpServerExternal = createServer(
                         lblExternalLogs,
-                        FXApplication.CURRENT_PLATFORM.getExternalPath(),
+                        resolveServerPath(tfPathExternal.getText(), getDefaultExternalPath()),
                         tfPortExternal.getText()
                 );
 
@@ -264,6 +275,31 @@ public class MainController {
                 tfPassword.getText(),
                 Integer.parseInt(port)
         );
+    }
+
+    private String resolvePreferencePath(String preferenceKey, String defaultPath) {
+        return resolveServerPath(PREFERENCES.get(preferenceKey, ""), defaultPath);
+    }
+
+    private String resolveServerPath(String path, String defaultPath) {
+        if (path == null || path.trim().isEmpty()) {
+            return defaultPath;
+        }
+        return path.trim();
+    }
+
+    private String getDefaultExternalPath() {
+        if (FXApplication.CURRENT_PLATFORM == Platform.STEAM_DECK) {
+            return PlatformUtils.findSteamDeckExternalPath()
+                    .orElse(FXApplication.CURRENT_PLATFORM.getExternalPath());
+        }
+        return FXApplication.CURRENT_PLATFORM.getExternalPath();
+    }
+
+    private void putIntPreference(String preferenceKey, String value) {
+        if (value != null && !value.isEmpty()) {
+            PREFERENCES.putInt(preferenceKey, Integer.parseInt(value));
+        }
     }
 
     @FXML

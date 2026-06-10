@@ -49,3 +49,5 @@ tools/
 users.properties
 
 buildLinux.sh
+
+.gradle-home
