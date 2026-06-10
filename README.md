@@ -41,11 +41,15 @@ App UI is very simple and consist of few configuration fields and `Start`/`Stop`
 
 *Note: default settings with `deck` username, `deck` password and `9001`/`9002` ports should be fine for almost all users*
 
-Fields:  
-`Username`: define `username` that you will use to connect  
-`Password`: define `password` that you will use to connect  
-`Port (Internal memory)`: define internal memory `port` that you will use to connect  
-`Port (External memory)`: define external memory `port` that you will use to connect
+Fields:
+- `Username`: define `username` that you will use to connect
+- `Password`: define `password` that you will use to connect
+- `Port (Internal memory)`: define internal memory `port` that you will use to connect
+- `Port (External memory)`: define external memory `port` that you will use to connect
+- `Internal memory path`: define internal memory root path that FTP server will expose
+- `External memory path`: define external memory root path that FTP server will expose
+
+If a memory path field is empty, Drop2Deck will use the default path for your platform. On Steam Deck, the external memory path is detected from `/run/media` when possible.
 
 ### How to start
 
@@ -61,11 +65,13 @@ Select `FTP Client` that will be used for connection to `Deck2Drop`. I prefer `F
 
 #### Predefined paths
 
-Paths for supported systems are predefined:  
-**Steam Deck**: `/home` and `/run/media/mmcblk0p1`  
-**Windows**: `C:\` and `D:\`  
-**Linux**: `/home` and `/mnt`  
-**macOS**: `/Users` and `/Volumes`  
+Paths for supported systems are predefined:
+- **Steam Deck**: `/home` and an auto-detected directory from `/run/media`; fallback external path is `/run/media/mmcblk0p1`
+- **Windows**: `C:\` and `D:\`
+- **Linux**: `/home` and `/mnt`
+- **macOS**: `/Users` and `/Volumes`
+
+You can override these paths in the app before starting FTP servers. Custom paths are saved in app preferences.
 
 #### Hidden files and directories
 
