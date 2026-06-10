@@ -63,6 +63,13 @@ jobs:
             libavcodec-dev \
             libavformat-dev \
             libavutil-dev \
+            libfreetype6-dev \
+            libgl-dev \
+            libglib2.0-dev \
+            libgtk-3-dev \
+            libpango1.0-dev \
+            libx11-dev \
+            libxtst-dev \
             pkg-config \
             zlib1g-dev
 
@@ -100,7 +107,13 @@ jobs:
         shell: bash
         run: |
           mkdir -p dist
-          cp "build/gluonfx/x86_64-${{ matrix.gluon_target }}/${{ matrix.executable }}" "dist/${{ matrix.asset_name }}"
+          binary="$(find "build/gluonfx/x86_64-${{ matrix.gluon_target }}" -maxdepth 1 -type f -executable | head -n 1)"
+          if [ -z "$binary" ]; then
+            echo "No executable binary found in build/gluonfx/x86_64-${{ matrix.gluon_target }}"
+            find "build/gluonfx/x86_64-${{ matrix.gluon_target }}" -maxdepth 2 -type f -print
+            exit 1
+          fi
+          cp "$binary" "dist/${{ matrix.asset_name }}"
           chmod +x "dist/${{ matrix.asset_name }}"
 
       - name: Package Windows binary
@@ -108,7 +121,13 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path dist
-          Copy-Item "build\gluonfx\x86_64-${{ matrix.gluon_target }}\${{ matrix.executable }}" "dist\${{ matrix.asset_name }}"
+          $binary = Get-ChildItem "build\gluonfx\x86_64-${{ matrix.gluon_target }}" -Filter "*.exe" -File | Select-Object -First 1
+          if (-not $binary) {
+            Write-Error "No executable binary found in build\gluonfx\x86_64-${{ matrix.gluon_target }}"
+            Get-ChildItem "build\gluonfx\x86_64-${{ matrix.gluon_target }}" -Recurse -File | Select-Object -ExpandProperty FullName
+            exit 1
+          }
+          Copy-Item $binary.FullName "dist\${{ matrix.asset_name }}"
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
