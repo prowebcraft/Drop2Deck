@@ -57,7 +57,14 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential zlib1g-dev
+          sudo apt-get install -y \
+            build-essential \
+            libasound2-dev \
+            libavcodec-dev \
+            libavformat-dev \
+            libavutil-dev \
+            pkg-config \
+            zlib1g-dev
 
       - name: Configure GraalVM paths
         shell: bash
@@ -74,20 +81,34 @@ jobs:
             echo "${{ matrix.gradle_property }} = $java_home"
           } > gradle.properties
 
-      - name: Build native binary
+      - name: Build native binary on Linux
+        if: runner.os == 'Linux'
         shell: bash
         env:
           USE_NATIVE_IMAGE_JAVA_PLATFORM_MODULE_SYSTEM: "false"
         run: bash ./gradlew nativeBuild --no-daemon --stacktrace
 
-      - name: Package binary
+      - name: Build native binary on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          USE_NATIVE_IMAGE_JAVA_PLATFORM_MODULE_SYSTEM: "false"
+        run: .\gradlew.bat nativeBuild --no-daemon --stacktrace
+
+      - name: Package Linux binary
+        if: runner.os == 'Linux'
         shell: bash
         run: |
           mkdir -p dist
           cp "build/gluonfx/x86_64-${{ matrix.gluon_target }}/${{ matrix.executable }}" "dist/${{ matrix.asset_name }}"
-          if [ "${{ runner.os }}" = "Linux" ]; then
-            chmod +x "dist/${{ matrix.asset_name }}"
-          fi
+          chmod +x "dist/${{ matrix.asset_name }}"
+
+      - name: Package Windows binary
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist
+          Copy-Item "build\gluonfx\x86_64-${{ matrix.gluon_target }}\${{ matrix.executable }}" "dist\${{ matrix.asset_name }}"
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
